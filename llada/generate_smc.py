@@ -106,6 +106,7 @@ def generate(model, prompt, steps=128, gen_length=128, block_length=128, tempera
                 print(f"Normal Resampling at block {num_block}, with ess: {ess:.2f}")
                 k_idx = torch.multinomial(weights, num_samples=num_particles, replacement=True).squeeze(-1)
                 x = x[k_idx]; logp = logp[k_idx]; log_w = log_w[k_idx] #log_w.zero_()
+                log_w -= log_w.mean()
 
         tps = block_length // i # tokens_per_step
         print(f"num_block: {num_block+1}, block length: {block_length}, diffusion steps: {i}, tokens/step: {tps}, num_particles: {num_particles}")
