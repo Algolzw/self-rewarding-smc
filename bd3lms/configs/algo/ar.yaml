@@ -1,0 +1,15 @@
+name: ar
+backbone: dit
+parameterization: ar
+time_conditioning: False
+causal_attention: True
+T: 0
+dropout: 0.0
+ignore_bos: False
+cross_attn: False
+var_min: False
+clip_search_delta: 0.05
+clip_search_widths: []
+fix_clipping: False
+sampler: ar
+mdlm_loss_scale: False

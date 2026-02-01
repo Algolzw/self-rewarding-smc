@@ -1,4 +1,4 @@
-# Dream Model Evaluation Guide
+## Dream Model Evaluation Guide for paper <br><sub> Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models</sub>
 
 This document provides detailed instructions for evaluating the Dream model on GSM8K math problem solving and HumanEval code generation tasks.
 
@@ -29,48 +29,22 @@ model="Dream-org/Dream-v0-Base-7B"
 
 1. **Baseline**
 ```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${length},add_bos_token=true,alg=entropy,show_speed=True \
+accelerate launch --main_process_port 29601 eval.py --model dream \
+    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,temperature=1.0,use_smc=False \
     --tasks ${task} \
     --num_fewshot ${num_fewshot} \
-    --batch_size 1
+    --batch_size 1 
 ```
 
-2. **Prefix Cache**
+2. **SR-SMC**
 ```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=256,diffusion_steps=256,add_bos_token=true,alg=entropy,use_cache=true,show_speed=True \
+accelerate launch --main_process_port 29601 eval.py --model dream \
+    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,temperature=1.0,use_smc=True \
     --tasks ${task} \
     --num_fewshot ${num_fewshot} \
-    --batch_size 1
+    --batch_size 1 
 ```
 
-3. **Parallel Generation**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,show_speed=True \
-    --tasks ${task} \
-    --num_fewshot ${num_fewshot} \
-    --batch_size 1
-```
-
-4. **Prefix Cache + Parallel**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true \
-    --tasks ${task} \
-    --num_fewshot ${num_fewshot} \
-    --batch_size 1
-```
-
-5. **Dual Cache + Parallel**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,dual_cache=true \
-    --tasks ${task} \
-    --num_fewshot ${num_fewshot} \
-    --batch_size 1
-```
 
 ### Parameter Descriptions
 
@@ -81,8 +55,9 @@ accelerate launch eval.py --model dream \
 - `steps`: Number of generation steps
 - `model`: Model name (Dream-v0-Base-7B)
 - `use_cache`: Enable prefix cache
-- `dual_cache`: Enable dual cache
 - `threshold`: Confidence threshold for parallel generation
+- `temperature`: Temperature for diffusion sampling
+- `use_smc`: Use self rewarding SMC for sampling
 - `show_speed`: Display speed metrics
 - `alg`: Generation algorithm (entropy or confidence_threshold)
 
@@ -105,50 +80,20 @@ model="Dream-org/Dream-v0-Base-7B"
 1. **Baseline**
 ```bash
 accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${length},add_bos_token=true,alg=entropy,show_speed=True,escape_until=true \
+    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,temperature=1.0,use_smc=False,show_speed=True,escape_until=true \
     --tasks ${task} \
     --batch_size 1 \
-    --output_path evals_results/baseline/humaneval-ns0-${length} --log_samples \
+    --output_path evals_results/cache_parallel/humaneval-ns0-${length}-${logname} --log_samples \
     --confirm_run_unsafe_code
 ```
 
-2. **Prefix Cache**
+2. **SR-SMC**
 ```bash
 accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${length},add_bos_token=true,alg=entropy,use_cache=true,show_speed=True,escape_until=true \
+    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,temperature=1.0,use_smc=True,show_speed=True,escape_until=true \
     --tasks ${task} \
     --batch_size 1 \
-    --output_path evals_results/cache/humaneval-ns0-${length} --log_samples \
-    --confirm_run_unsafe_code
-```
-
-3. **Parallel Generation**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,show_speed=True,escape_until=true \
-    --tasks ${task} \
-    --batch_size 1 \
-    --output_path evals_results/parallel/humaneval-ns0-${length} --log_samples \
-    --confirm_run_unsafe_code
-```
-
-4. **Prefix Cache + Parallel**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,escape_until=true \
-    --tasks ${task} \
-    --batch_size 1 \
-    --output_path evals_results/cache_parallel/humaneval-ns0-${length} --log_samples \
-    --confirm_run_unsafe_code
-```
-
-5. **Dual Cache + Parallel**
-```bash
-accelerate launch eval.py --model dream \
-    --model_args pretrained=${model},max_new_tokens=${length},diffusion_steps=${steps},add_bos_token=true,alg=confidence_threshold,threshold=0.9,use_cache=true,dual_cache=true,escape_until=true \
-    --tasks ${task} \
-    --batch_size 1 \
-    --output_path evals_results/dual_cache_parallel/humaneval-ns0-${length} --log_samples \
+    --output_path evals_results/cache_parallel/humaneval-ns0-${length}-${logname} --log_samples \
     --confirm_run_unsafe_code
 ```
 

@@ -1,0 +1,104 @@
+defaults:
+  - _self_
+  - /callbacks: [checkpoint_every_n_steps, checkpoint_monitor, learning_rate_monitor]
+  - /data: openwebtext
+  - /model: small
+  - /strategy: ddp
+  - /noise: loglinear
+  - /lr_scheduler: constant_warmup
+  - /algo: bd3lm
+
+mode: train  # train / ppl_eval / sample_eval
+diffusion: absorbing_state
+
+seed: 1
+
+block_size: ${model.length}
+
+loader:
+  global_batch_size: 512
+  eval_global_batch_size: ${.global_batch_size}
+  # Note: batch_size and eval_batch_size are **per machine**
+  batch_size: ${div_up:${.global_batch_size}, ${eval:${trainer.devices} * ${trainer.num_nodes}}}
+  eval_batch_size: ${div_up:${.eval_global_batch_size}, ${eval:${trainer.devices} * ${trainer.num_nodes}}}
+  num_workers: ${eval:"len(__import__('os').sched_getaffinity(0))"}
+  pin_memory: True
+
+sampling:
+  noise_removal: False
+  num_sample_batches: 1  # Total samples: `num_gpus` * `loader.eval_batch_size` * num_sample_batches
+  var_length: False
+  logdir: ./samples_${algo.name}_len${model.length}_blocksize${block_size}
+  nucleus_p: 1.0
+  first_hitting: True # should be set to true when T >> block_size
+  kv_cache: False
+  ### parameters below used for self-rewarding SMC ###
+  use_smc: True
+  n_particles: 4
+  resample_freq: 128
+
+training:
+  ema: 0.9999
+  antithetic_sampling: True
+  sampling_eps: 1e-3
+  coeff_clip: -1.
+  resample: False
+  sampling_eps_min: 1e-3
+  sampling_eps_max: 1.0
+  from_pretrained: null
+  eval_nll: True # always evaluate nll if block size is 1
+
+eval:
+  checkpoint_path: ${cwd:}/checkpoints/last.ckpt  # Used to evaluate a checkpoint after training.
+  disable_ema: False
+  perplexity_batch_size: 8
+  compute_perplexity_on_sanity: False
+  gen_ppl_eval_model_name_or_path: gpt2-large  # gpt2-large, meta-llama/Llama-2-7b-hf
+  generate_samples: False
+
+optim:
+  weight_decay: 0
+  lr: 3e-4
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1e-8
+
+trainer:
+  _target_: lightning.Trainer
+  accelerator: cuda
+  num_nodes: 1
+  devices: ${device_count:}
+  accumulate_grad_batches: ${div_up:${loader.global_batch_size}, ${eval:${trainer.devices} * ${loader.batch_size} * ${trainer.num_nodes}}}
+  gradient_clip_val: 1.0
+  precision: 'bf16-mixed'
+  num_sanity_val_steps: 2
+  max_steps: 1_000_000
+  log_every_n_steps: 1_000
+  limit_train_batches: 1.0   # train on full dataset, can be used to toggle quick run
+  limit_val_batches: 1.0     # validate on full dataset, can be used to toggle quick run
+  val_check_interval: 10_000
+
+wandb:
+  project: BD3-LMs
+  notes: Block Denoising Discrete Diffusion Language Models
+  group: null
+  job_type: null
+  name: null
+  id: ${.name}_${seed}
+  tags:
+    - ${noise.type}
+    - ${data.train}
+    - ${data.valid}
+
+hydra:
+  run:
+    dir: ./outputs/${data.train}/${now:%Y.%m.%d}/${now:%H%M%S}
+  job:
+    chdir: true
+
+checkpointing:
+  # Use custom `save_dir` if, e.g., saving to S3 bucket, otherwise leave this parameter as is
+  save_dir: ${cwd:}
+  # Note: `checkpoints` path should correspond to `checkpoint_every_n_steps.dirpath`
+  resume_from_ckpt: true
+  resume_ckpt_path: ${.save_dir}/checkpoints/last.ckpt

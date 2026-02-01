@@ -1,4 +1,4 @@
-# LLaDA Model Evaluation Guide
+## LLaDA Model Evaluation for paper <br><sub> Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models</sub>
 
 This document provides detailed instructions for evaluating the LLaDA model on GSM8K math problem solving and HumanEval code generation tasks.
 
@@ -22,6 +22,7 @@ length=256
 block_length=32
 num_fewshot=5
 steps=$((length / block_length))
+model_path='GSAI-ML/LLaDA-1.5'
 ```
 
 ### Evaluation Methods
@@ -30,36 +31,16 @@ steps=$((length / block_length))
 ```bash
 accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
 --confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${length},block_length=${block_length},show_speed=True
+--model_args model_path=${model_path},gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,temperature=1.0,use_smc=False,show_speed=True 
 ```
 
-2. **Prefix Cache**
+2. **SR-SMC**
 ```bash
-accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
+accelerate launch --main_process_port 29514 eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
 --confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${length},block_length=${block_length},use_cache=True,show_speed=True
+--model_args model_path=${model_path},gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,temperature=1.0,use_smc=True,show_speed=True 
 ```
 
-3. **Parallel Generation**
-```bash
-accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},threshold=0.9,show_speed=True
-```
-
-4. **Prefix Cache + Parallel**
-```bash
-accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,show_speed=True
-```
-
-5. **Dual Cache + Parallel**
-```bash
-accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,dual_cache=True,threshold=0.9,show_speed=True
-```
 
 ### Parameter Descriptions
 
@@ -69,8 +50,9 @@ accelerate launch eval_llada.py --tasks ${task} --num_fewshot ${num_fewshot} \
 - `num_fewshot`: Number of few-shot examples
 - `steps`: Number of generation steps
 - `use_cache`: Enable prefix cache
-- `dual_cache`: Enable dual cache
 - `threshold`: Confidence threshold for parallel generation
+- `temperature`: Temperature for diffusion sampling
+- `use_smc`: Use self rewarding SMC for sampling
 - `show_speed`: Display speed metrics
 
 ## HumanEval Evaluation
@@ -84,6 +66,8 @@ task=humaneval
 length=256
 block_length=32
 steps=$((length / block_length))
+model_path='GSAI-ML/LLaDA-1.5'
+logname=smc
 ```
 
 ### Evaluation Methods
@@ -92,40 +76,16 @@ steps=$((length / block_length))
 ```bash
 accelerate launch eval_llada.py --tasks ${task} \
 --confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${length},block_length=${block_length},show_speed=True \
---output_path evals_results/baseline/humaneval-ns0-${length} --log_samples
+--model_args model_path=${model_path},gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,use_smc=False,show_speed=True \
+--output_path evals_results/cache_parallel/humaneval-ns0-${length}-${logname} --log_samples
 ```
 
-2. **Prefix Cache**
+2. **SR-SMC**
 ```bash
 accelerate launch eval_llada.py --tasks ${task} \
 --confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${length},block_length=${block_length},use_cache=True,show_speed=True \
---output_path evals_results/prefix_cache/humaneval-ns0-${length} --log_samples
-```
-
-3. **Parallel Generation**
-```bash
-accelerate launch eval_llada.py --tasks ${task} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},threshold=0.9,show_speed=True \
---output_path evals_results/parallel/humaneval-ns0-${length} --log_samples
-```
-
-4. **Prefix Cache + Parallel**
-```bash
-accelerate launch eval_llada.py --tasks ${task} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,show_speed=True \
---output_path evals_results/cache_parallel/humaneval-ns0-${length} --log_samples
-```
-
-5. **Dual Cache + Parallel**
-```bash
-accelerate launch eval_llada.py --tasks ${task} \
---confirm_run_unsafe_code --model llada_dist \
---model_args model_path='GSAI-ML/LLaDA-8B-Instruct',gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,dual_cache=True,threshold=0.9,show_speed=True \
---output_path evals_results/dual_cache_parallel/humaneval-ns0-${length} --log_samples
+--model_args model_path=${model_path},gen_length=${length},steps=${steps},block_length=${block_length},use_cache=True,threshold=0.9,use_smc=True,show_speed=True \
+--output_path evals_results/cache_parallel/humaneval-ns0-${length}-${logname} --log_samples
 ```
 
 ### Post-processing
@@ -137,8 +97,7 @@ python postprocess_code.py {the samples_xxx.jsonl file under output_path}
 
 ## Notes
 
-1. All evaluations use the LLaDA-8B-Instruct model
+1. All evaluations use the LLaDA-1.5 model
 2. Results are saved in the `evals_results` directory
 3. For HumanEval, samples are logged for post-processing
 4. Speed metrics are shown for all evaluations
-5. Different optimization strategies can be combined:

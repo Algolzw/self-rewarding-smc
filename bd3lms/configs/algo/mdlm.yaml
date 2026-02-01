@@ -1,0 +1,15 @@
+name: mdlm
+backbone: dit  # dit / dimamba / hf_dit
+parameterization: subs
+time_conditioning: False
+T: 0  # 0 (continuous time) / 1000 
+causal_attention: False
+dropout: 0.0
+ignore_bos: True
+cross_attn: False
+var_min: False
+clip_search_delta: 0.05
+clip_search_widths: []
+fix_clipping: False
+sampler: semi_ar
+mdlm_loss_scale: False # set to true if using models from sahoo/lou et al

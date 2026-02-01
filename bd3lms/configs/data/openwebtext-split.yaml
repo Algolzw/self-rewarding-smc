@@ -1,0 +1,10 @@
+train: openwebtext-train
+valid: openwebtext-valid
+tokenizer_name_or_path: gpt2
+cache_dir: /home/ziwlu/work/projects/diffusion-llms/data
+wrap: True
+streaming: False
+insert_train_eos: True
+insert_valid_eos: True
+insert_train_special: True
+insert_valid_special: True
