@@ -1,7 +1,7 @@
 ## Self-Rewarding SMC for Masked Diffusion Language Models<br><sub>Official PyTorch Implementation</sub>
 Self-Rewarding Sequential Monte Carlo (SMC) for Masked Diffusion Language Models
 
-![sr-smc](images/overview.pdf)
+![sr-smc](images/overview.jpg)
 
 ## Overview
 **TL;DR.** Self-Rewarding SMC is an inference-time scaling method that leverages trajectory-level confidence from diffusion models as importance weights to steer generation toward globally confident, high-quality samples.
@@ -62,10 +62,10 @@ sh scripts/gen_ppl/genppls_batch.sh
 ![sr-smc-dllms-1](images/tab-dllms.png)
 
 **2. Overall performance trends as #particle increases:**
-![sr-smc-dllms-2](images/n_particles.pdf)
+![sr-smc-dllms-2](images/n_particles.jpg)
 
 **3. Effect of Gumbel noise temperature on model performance:**
-![sr-smc-dllms-3](images/temperature.pdf)
+![sr-smc-dllms-3](images/temperature.jpg)
 
 ### Contributing
 Issues and Pull Requests are welcome!
