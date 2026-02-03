@@ -1,6 +1,8 @@
 ## Self-Rewarding SMC for Masked Diffusion Language Models<br><sub>Official PyTorch Implementation</sub>
 Self-Rewarding Sequential Monte Carlo (SMC) for Masked Diffusion Language Models
 
+[Project Page](https://algolzw.github.io/sr-smc) | [Paper](https://arxiv.org/abs/2602.01849)
+
 ![sr-smc](images/overview.jpg)
 
 ## Overview
@@ -81,7 +83,7 @@ If you find this work useful, please cite our paper:
 @article{luo2026self,
   title={Self-Rewarding Sequential Monte Carlo for Masked Diffusion Language Models},
   author={Luo, Ziwei and Jin, Ziqi and Lei, Wang and Bing, Lidong and Sch{\"o}n, Thomas B},
-  journal={arXiv preprint arXiv:2506.xxxx},
+  journal={arXiv preprint arXiv:2602.01849},
   year={2026}
 }
 ```
